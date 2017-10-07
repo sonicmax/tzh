@@ -308,7 +308,7 @@ var background = (() => {
 		
 		checkNavigationDest: function(tabId, changeInfo) {
 			var newUrl = changeInfo.url;
-			if (newUrl && newUrl.indexOf('endoftheinter.net') === -1) {
+			if (newUrl && newUrl.indexOf('thread.zone') === -1) {
 				messagePassing.deleteTabRefs(tabId);
 			}			
 		},
