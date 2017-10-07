@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8" />
+<title>Thread Zone Helper Options</title>
+
+<link rel="stylesheet" href="lib/bootstrap-3.3.7-dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="src/css/config/options.css">
+<link rel="stylesheet" href="src/css/config/button.css">
+<link rel="stylesheet" href="src/css/config/checkbox.css">
+<link rel="stylesheet" href="src/css/config/select.css">
+<link rel="stylesheet" href="src/css/config/colorpicker.css">
+<link rel='stylesheet' href='/src/css/config/opensans.css'>
+
+<script type="text/javascript" src="lib/jquery.js"></script>
+<script type="text/javascript" src="lib/bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="lib/jquery.confirm.js"></script>
+<script type="text/javascript" src="src/js/options.js"></script>
+<script type="text/javascript" src="lib/colorpicker.js"></script>
+
+<body>
+	<div id="main-content">
+		<div id="navbar-container">
+		
+			<h1 class="title">TZH</h1>
+			
+			<ul id="navbar">
+				<li class="navbar-item navbar-item-selected options_navigation_link" id="general_link">General</li>
+				<li class="navbar-item options_navigation_link" id="sync_link">Sync</li>
+				<li class="navbar-item options_navigation_link" id="about_link">About</li>
+			</ul>
+		</div>
+		
+		<div id="mainview">
+			<div id="mainview-content">
+				<div id="toplevel-page-container">
+				
+					<!-- GENERAL PAGE -->
+				
+					<div class="page shown" id="general_page">
+						<h1>General</h1>					
+						<section>
+							<h3>Transloader</h3>
+							<div>
+								<div class="checkbox">
+									<label>
+										<input type="checkbox" id="enableImageRename" />
+										<span>Show "Rename and transload" in context menu</span>
+									</label>
+								</div>
+							</div>
+						</section>				
+						<section>
+							<h3>Notifications</h3>
+							<div>
+								<div class="checkbox">
+									<label>
+										<input type="checkbox" id="systemNotifications" />
+										<span>Show notifications about TZH events (when updated, etc)</span>
+									</label>
+								</div>
+								<div class = "checkbox">
+									<label>
+										<span>Set duration of notifications:</span>
+										<input type="number" id="notificationDuration" min="1" size="2" placeholder="5"/> seconds
+									</label>
+								</div>									
+							</div>
+						</section>
+					</div>
+						
+					<!-- SYNC PAGE -->
+						
+					<div class="page hidden" id="sync_page">
+						<h1>Sync</h1>
+						<section>
+							<h3>Settings</h3>
+							<div>
+								<div class="checkbox">
+									<label>
+										<input type="checkbox" id="enableSync" disabled/>
+										<span>Sync TZH settings with Google Account
+										</span>
+									</label>
+								</div>
+							</div>
+						</section>					
+						<section>
+							<h3>Dev stuff</h3>
+							<div>
+								<input type="button" value="Force save sync" id="savesync" disabled/>
+								<input type="button" value="Force load sync" id="loadsync" disabled/>
+								<br><br>
+								<textarea id="fsync_ta" style="width: 90%; height: 100px; border: 1px solid grey;"></textarea>
+							</div>
+						</section>
+					</div>
+
+					<!-- ABOUT PAGE -->
+					
+					<div class="page hidden" id="about_page">
+						<h1>Version: <span id="version"></span></h1>
+						<section>
+							<h3>Log</h3>
+							<div>
+								<div class="checkbox">
+									<label>
+										<input type="checkbox" id="debug" />
+										<span>Enable debug logging to console</span>
+									</label>
+								</div>
+								<!--<div class="checkbox">
+									<label>
+										<input type="checkbox" id="reload_on_update" />
+										<span>Reload ETI pages after updating extension</span>
+									</label>
+								</div>-->
+							</div>
+						</section>
+						
+						<section>
+							<h3>About</h3>
+							<div>
+								Written by <a href="https://bad.thread.zone/profile/maxichanw00t">max</a>
+							</div>
+						</section>
+						
+						<section>
+							<h3>Config</h3>
+							<div>
+								<input type="button" value="Download TZH config as text file" id="downloadbutton" />
+								<a href="#" id="downloadcfg" download="config.txt" style="display:none"/></a>
+								<br><br>
+								<input type="button" value="Restore TZH config from text file" id="restorebutton" />
+								<input type="file"  id="restorecfg" style="display:none"/>
+								<br><br>
+								<input type="button" value="Reset to default settings" id="resetcfg" />
+								<br><br>
+								<a href="#" id="old_cfg_options"/>Show config in text area</a>
+								<div class="old_cfg_options" style="display:none">
+									<input type="button" value="Load TZH config from text box" id="loadcfg" />		
+									<textarea id="cfg_ta" style="width: 90%; height: 300px; border: 1px solid grey;"></textarea>
+								</div>
+							</div>
+						</section>
+					</div>
+					<!--end option pages-->
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

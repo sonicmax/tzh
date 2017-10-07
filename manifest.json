@@ -1,0 +1,38 @@
+{
+  "name": "Thread Zone Helper",
+	
+  "version": "0.5",
+	
+  "manifest_version": 2,
+	
+  "description": "Enhancements for the forums at the Thread Zone",
+	
+  "options_page": "options.html",
+	
+  "options_ui": {
+		"page": "options.html",
+    "chrome_style": false
+  },
+	
+  "minimum_chrome_version": "40.0.0.0",
+	
+  "web_accessible_resources": ["src/images/tiko_bird.png", "src/images/tiko_bird_error.png", "options.html", "src/json/defaultconfig.json"],
+	
+  "icons": {
+ 	"16": "src/images/tiko_bird.png",
+ 	"48": "src/images/tiko_bird.png",
+	"128":	"src/images/tiko_bird.png"
+  },
+	
+  "browser_action": {
+    "default_icon": "src/images/tiko_bird.png",
+    "default_title": "ChromeLL",
+    "default_popup": "options.html"
+  },
+	
+  "background": {
+    "scripts": ["background.js", "src/js/transloader.js"]
+  },
+	
+  "permissions": [ "tabs", "clipboardWrite", "notifications", "http://*/*", "https://*/*", "contextMenus", "webRequest", "webRequestBlocking", "storage", "unlimitedStorage"]
+}
