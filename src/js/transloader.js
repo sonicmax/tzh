@@ -3,7 +3,6 @@
 function Transloader() {
 	const UPLOAD_SIZE_LIMIT = 10000000; // 10MB
 
-	var threadZone = '';
 	var needsRename = false;
 	var imageSrcUrl = '';
 	
@@ -73,10 +72,6 @@ function Transloader() {
 			throw new Error('Couldn\'t find source URL');
 		}
 		
-		else if (!threadZone || threadZone === '') {
-			throw new Error('Couldn\'t find destination zone');
-		}
-
 		return true;
 	};
 	
