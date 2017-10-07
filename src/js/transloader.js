@@ -6,7 +6,9 @@ function Transloader() {
 	var threadZone = '';
 	var needsRename = false;
 	var imageSrcUrl = '';
+	
 	var imgurNotificationId;
+	var threadZoneNotificationId;
 	
 	/** 'PUBLIC' METHODS **/
 	
@@ -42,29 +44,30 @@ function Transloader() {
 	 
 	var start = function() {
 		if (hasCorrectParams()) {	
-		var filename = getFilename(imageSrcUrl);
-		
-		if (needsRename) {
-			var newFilename = handleRename(filename);
-			if (newFilename === false) {
-				return;
-			}
-			else if (newFilename) {
-				filename = newFilename;
-			}
-		}
-		
-		fetchImage(imageSrcUrl, (filesize, mimetype, blob) => {
-			if (filesize > UPLOAD_SIZE_LIMIT) {
-				uploadToImgur(blob);
+			var filename = getFilename(imageSrcUrl);
+			
+			if (needsRename) {
+				var newFilename = handleRename(filename);
+				if (newFilename === false) {
+					return;
+				}
+				else if (newFilename) {
+					filename = newFilename;
+				}
 			}
 			
-			else {
-				uploadToThreadZone(blob, filename);
-			}
-			
-		});	
+			fetchImage(imageSrcUrl, (filesize, mimetype, blob) => {
+				if (filesize > UPLOAD_SIZE_LIMIT) {
+					uploadToImgur(blob, filename);
+				}
+				
+				else {
+					uploadToThreadZone(blob, filename);
+				}
+				
+			});	
 		
+		}	
 	};
 	
 	/** 'PRIVATE' METHODS **/
@@ -222,29 +225,87 @@ function Transloader() {
 		var formData = new FormData();
 		formData.append('image', blob, filename);
 
-		// Upload to ETI
+		// Construct XHR and add event handlers/etc
 		var xhr = new XMLHttpRequest();
-		xhr.open('POST', THREAD_ZONE_ENDPOINT, true);
-
+		xhr.open('POST', endpoint, true);
+		
+		// After XHR completes, call onUploadSuccess with response and filename.
+		// Throw error if status code indicates that an error occured
+		
 		xhr.onload = () => {
 			
 			if (xhr.status === 200) {
+				chrome.notifications.clear(threadZoneNotificationId, null);
 				onUploadSuccess(xhr.responseText, filename);
 				
 			} else {
 				throw new Error('Couldn\'t upload image. Status code: ', xhr.statusText);
 			}
-		}
-			// send FormData object to ETI
-		xhr.send(formData);	
+		}	
+
+		xhr.upload.addEventListener('progress', (evt) => {
+			if (threadZoneNotificationId) {
+				
+				var update = {};
+				
+				if (evt.lengthComputable) {
+					var percentage = Math.round((evt.loaded / evt.total) * 100);
+					
+					console.log(percentage);
+					
+					if (percentage === 100) {
+						update.type = 'basic';
+						update.contextMessage = 'Waiting for response...';
+					}
+					else {
+						update.progress = percentage;
+					}
+					
+					chrome.notifications.update(threadZoneNotificationId, update);
+				}
+			}	
+		});				
+
+		// Send FormData object to Thread Zone and create progress notification
+		xhr.send(formData);
+		showProgressNotification(xhr);
 	};
 	
+	var showProgressNotification = function(xhr) {
+		chrome.notifications.create('upload', {
+			
+			type: 'progress',
+			title: 'Thread Zone Helper',
+			message: 'Uploading image to the Thread Zone...',
+			progress: 0,
+			buttons: [{
+				title: 'Cancel'
+			}],
+			requireInteraction: true,
+			iconUrl: 'src/images/tiko_bird.png'
+			
+		}, (id) => {
+			
+			threadZoneNotificationId = id;
+			
+			chrome.notifications.onButtonClicked.addListener((notifId, btnIdx) => {
+				
+				if (notifId === id && btnIdx === 0) {
+					xhr.abort();
+					chrome.notifications.clear(id, null);
+				}
+				
+			});
+			
+		});
+	};	
+	
 	var onUploadSuccess = function(responseText, filename) {
-		copyToClipboard(responseText);
+		copyToClipboard(responseText);		
 		showSuccessNotification(filename);
 	};
 
-	var uploadToImgur = function(blob) {
+	var uploadToImgur = function(blob, filename) {
 		const IMGUR_UPLOAD_ENDPOINT = 'https://api.imgur.com/3/image';
 		const API_KEY = 'Client-ID 6356976da2dad83';
 		var formData = new FormData();
@@ -257,17 +318,16 @@ function Transloader() {
 		xhr.onload = () => {
 			if (xhr.status === 200) {	
 				var jsonResponse = JSON.parse(xhr.responseText);
-				var url = jsonResponse.data.gifv;
-				copyToClipboard(url);
-			}		
+				var url = jsonResponse.data.gifv;				
+				onUploadSuccess(url, filename);
+			}
 			else {
 				showErrorNotification(xhr.status);
 			}
 		};
 		
 		xhr.upload.addEventListener('progress', (evt) => {
-			if (imgurNotificationId) {
-				
+			if (imgurNotificationId) {				
 				var update = {};
 				
 				if (evt.lengthComputable) {
@@ -281,7 +341,7 @@ function Transloader() {
 						update.progress = percentage;
 					}
 					
-					chrome.notifications.update(imgurNotificationId, update);
+					chrome.notifications.update(threadZoneNotificationId, update);
 				}
 			}	
 		});
@@ -350,7 +410,6 @@ function Transloader() {
 	};
 	
 	var showSuccessNotification = function(filename) {
-		// Notify user
 		chrome.notifications.create('succeed', {
 			
 			type: 'basic',
@@ -362,7 +421,7 @@ function Transloader() {
 			
 			setTimeout(() => {
 				chrome.notifications.clear(id, null);	
-			}, 3000);
+			}, 5000);
 			
 		});
 	};
