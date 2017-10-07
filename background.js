@@ -369,7 +369,7 @@ var background = (() => {
 				message: '',
 				progress: data.progress,						
 				requireInteraction: true,
-				iconUrl: 'src/images/lueshi_48.png'
+				iconUrl: 'src/images/tiko_bird.png'
 				
 			});
 		};
