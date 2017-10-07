@@ -1,6 +1,10 @@
 var background = (() => {
+	const DEFAULT_CONFIG_LOCATION = '/src/json/defaultconfig.json';
+	const CONFIG_KEY = 'TZH-Config';
+	
 	var config = {};
 	var tabPorts = {};
+	var notificationData = {};
 	
 	var init = function(defaultConfig) {
 		updateConfig(defaultConfig);
@@ -12,9 +16,9 @@ var background = (() => {
 	};
 	
 	var getDefaultConfig = function(callback) {
-		var defaultURL = chrome.extension.getURL('/src/json/defaultconfig.json');
+		var defaultURL = chrome.extension.getURL(DEFAULT_CONFIG_LOCATION);
 		var xhr = new XMLHttpRequest();
-		xhr.open("GET", defaultURL, true);
+		xhr.open('GET', defaultURL, true);
 		xhr.onload = function() {
 			if (this.status == 200) {
 				callback(JSON.parse(this.responseText));
@@ -24,13 +28,13 @@ var background = (() => {
 	};
 	
 	var updateConfig = function(defaultConfig) {
-		if (localStorage['TZH-Config'] === undefined) {
-			localStorage['TZH-Config'] = JSON.stringify(defaultConfig);
+		if (localStorage[CONFIG_KEY] === undefined) {
+			localStorage[CONFIG_KEY] = JSON.stringify(defaultConfig);
 			config = defaultConfig;
 		}
 		
 		else {
-			config = JSON.parse(localStorage['TZH-Config']);
+			config = JSON.parse(localStorage[CONFIG_KEY]);
 			
 			for (var i in defaultConfig) {
 				// if this variable does not exist, set it to the default
@@ -86,7 +90,7 @@ var background = (() => {
 	};
 	
 	var checkSync = function() {
-		chrome.storage.sync.get('config', function(syncData) {
+		chrome.storage.sync.get(CONFIG_KEY, function(syncData) {
 			
 			if (syncData.config && syncData.config.lastSave > config.lastSave) {		
 				// synced config file is more recent than version on computer
@@ -94,7 +98,7 @@ var background = (() => {
 					config[keyName] = syncData.config[keyName];					
 				}
 				
-				localStorage['TZH-Config'] = JSON.stringify(config);
+				localStorage[CONFIG_KEY] = JSON.stringify(config);
 				
 				var bSplit = [];
 				
@@ -108,13 +112,13 @@ var background = (() => {
 					for (var l in syncConfig) {
 						config[l] = syncConfig[l];
 					}
-					localStorage['TZH-Config'] = JSON.stringify(config);
+					localStorage[CONFIG_KEY] = JSON.stringify(config);
 				});
 				
 			}
 			
 			else if (!syncData.config || syncData.config.lastSave < config.lastSave) {
-				var localConfig = JSON.parse(localStorage['TZH-Config']);
+				var localConfig = JSON.parse(localStorage[CONFIG_KEY]);
 				var toSet = {};
 				for (var i in split) {
 					if (config[split[i]]) {
@@ -184,8 +188,6 @@ var background = (() => {
 		transloader.setParams(shouldRename);
 		transloader.start();
 	};
-	
-	var notificationData = {};
 	
 	/** 
 	 *  After notification onclick fires, get the stored window/tab id from
