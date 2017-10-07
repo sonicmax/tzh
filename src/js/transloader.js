@@ -188,7 +188,7 @@ function Transloader() {
 				
 				// Create blob
 				var dataview = new DataView(fileGet.response);
-				var blob = new Blob([dataview]);
+				var blob = new Blob([dataview], {type: mimetype});
 				
 				callback(filesize, mimetype, blob);
 			} 
