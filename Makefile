@@ -10,7 +10,7 @@ all: copy_files background options.js transloader.js
 copy_files:
 	-mkdir build
 	-mkdir dist 
-	cp manifest.json options.html $(BUILD_DIR) 
+	cp manifest.json options.html changelog.html $(BUILD_DIR) 
 	cp -r lib/ $(BUILD_DIR) 
 	-mkdir $(BUILD_SRC) 
 	cp -r src/css src/images src/json $(BUILD_SRC) 
