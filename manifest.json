@@ -1,11 +1,11 @@
 {
   "name": "Thread Zone Helper",
 	
-  "version": "0.5",
+  "version": "0.51",
 	
   "manifest_version": 2,
 	
-  "description": "Enhancements for the forums at the Thread Zone",
+  "description": "Enhancements for the Thread Zone",
 	
   "options_page": "options.html",
 	
