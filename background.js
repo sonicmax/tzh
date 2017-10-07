@@ -13,8 +13,11 @@ var background = (() => {
 	var init = function(defaultConfig) {
 		updateConfig(defaultConfig);
 		buildContextMenu();	
-		messagePassing.addListeners();
-		chrome.notifications.onClicked.addListener(makeNotificationOriginActive);
+		
+		// Note: not needed yet
+		// messagePassing.addListeners(); 		
+		// chrome.notifications.onClicked.addListener(makeNotificationOriginActive);
+		
 		checkVersion();
 		createClipboardElement();	
 		getSubbedZones();
