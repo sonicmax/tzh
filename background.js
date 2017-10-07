@@ -17,6 +17,7 @@ var background = (() => {
 		chrome.notifications.onClicked.addListener(makeNotificationOriginActive);
 		checkVersion();
 		createClipboardElement();	
+		getSubbedZones();
 	};
 	
 	/**
@@ -56,6 +57,14 @@ var background = (() => {
 				}
 			}		
 		}
+	};
+	
+	/**
+	 *  Save config to local storage
+	 */
+	 
+	var saveConfig = function() {
+		localStorage[CONFIG_KEY] = JSON.stringify(config);
 	};
 	
 	/**
@@ -316,7 +325,7 @@ var background = (() => {
 			switch(request.need) {
 				
 				case "xhr":
-					ajax(request, sendResponse);
+					xhr(request, sendResponse);
 					// Return true so that we can use sendResponse asynchronously 
 					// (See: https://developer.chrome.com/extensions/runtime#event-onMessage)
 					return true;
@@ -439,6 +448,65 @@ var background = (() => {
 			'clear': clear			
 		};		
 	};
+	
+	var getSubbedZones = function() {
+		const THREAD_ZONE = 'https://thread.zone/';
+			
+		var zones = [];
+		
+		xhr({'url': THREAD_ZONE}, (response) => {
+			
+			var homePage = document.createElement('html');
+			homePage.innerHTML = response;
+			var userbarEls = homePage.getElementsByClassName('userbar');
+			
+			if (userbarEls.length === 0) {
+				throw new Error('Couldn\'t find userbar');
+			}
+			
+			else {
+				var anchors = userbarEls[0].getElementsByTagName('a');
+				if (anchors.length === 0) {
+					console.warn('Not subbed to any zones');
+				}
+				
+				for (var i = 0, len = anchors.length; i < len; i++) {
+					var anchor = anchors[i];
+					zones.push(anchor.innerHTML);					
+				}
+				
+				config.zones = zones;
+				saveConfig();
+			}
+			
+		});
+	};
+	
+	/**
+	 *  Creates new XHR and passes response to callback
+	 */
+	
+	var xhr = function(request, callback) {
+		var type = request.type || 'GET';
+		var xhr = new XMLHttpRequest();
+		xhr.open(type, request.url, true);
+		
+		if (request.noCache) {
+			xhr.setRequestHeader('Cache-Control', 'no-cache');
+		}
+		if (request.auth) {
+			xhr.setRequestHeader('Authorization', request.auth);
+		}
+		if (request.withCredentials) {
+			xhr.withCredentials = "true";
+		}
+		
+		xhr.onload = function() {
+			callback(this.responseText);
+		};
+		
+		xhr.send();
+	};	
 	
 	return {
 		'init': init,
