@@ -1,4 +1,5 @@
 {
+	"zones": [],
 	"notificationDuration": "5",
 	"systemNotifications": true,
 	"openOptionsInNewTab": true,
