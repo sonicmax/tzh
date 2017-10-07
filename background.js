@@ -6,6 +6,10 @@ var background = (() => {
 	var tabPorts = {};
 	var notificationData = {};
 	
+	/**
+	 *  Called whenever extension is started (on opening Chrome, after installation/update, etc)
+	 */
+	
 	var init = function(defaultConfig) {
 		updateConfig(defaultConfig);
 		buildContextMenu();	
@@ -14,6 +18,10 @@ var background = (() => {
 		checkVersion();
 		createClipboardElement();	
 	};
+	
+	/**
+	 *  Loads default config and sends parsed response to callback
+	 */
 	
 	var getDefaultConfig = function(callback) {
 		var defaultURL = chrome.extension.getURL(DEFAULT_CONFIG_LOCATION);
@@ -26,6 +34,11 @@ var background = (() => {
 		};
 		xhr.send();
 	};
+	
+	/**
+	 *  Compares current config with default config and adds any missing values.
+	 *  (eg. after extension update with new options)
+	 */
 	
 	var updateConfig = function(defaultConfig) {
 		if (localStorage[CONFIG_KEY] === undefined) {
@@ -44,6 +57,11 @@ var background = (() => {
 			}		
 		}
 	};
+	
+	/**
+	 *  Compares current version with last known version and notifies user
+	 *  if extension has been updated.
+	 */
 	
 	var checkVersion = function() {
 		var app = chrome.app.getDetails();
@@ -88,6 +106,12 @@ var background = (() => {
 			localStorage['TZH-Version'] = app.version;
 		}
 	};
+	
+	/**
+	 *  Compares local config with synced config.
+	 *  If synced config is more recent, then we replace local with synced.
+	 *  If local is more recent, then we store config using chrome.sync API.
+	 */
 	
 	var checkSync = function() {
 		chrome.storage.sync.get(CONFIG_KEY, function(syncData) {
@@ -152,12 +176,20 @@ var background = (() => {
 		});
 	};
 	
+	/**
+	 *  Creates textarea used to store text ready to be copied to clipboard
+	 */
+	
 	var createClipboardElement = function() {
 		var backgroundPage = chrome.extension.getBackgroundPage();
 		var textArea = backgroundPage.document.createElement("textarea");
 		textArea.id = "clipboard";
 		backgroundPage.document.body.appendChild(textArea);	
 	};
+	
+	/**
+	 *  Builds context menu using settings from config
+	 */
 	
 	var buildContextMenu = function() {
 		chrome.contextMenus.create({
@@ -181,6 +213,11 @@ var background = (() => {
 			});
 		}
 	};
+	
+	/**
+	 *  Called after user right clicks image and chooses transload menu item.
+	 *  Instantiates new transloader and initiates upload
+	 */
 	
 	var transloadImage = function(info, shouldRename) {
 		var transloader = new Transloader();
@@ -333,6 +370,10 @@ var background = (() => {
 		}
 	};
 	
+	/**
+	 *  Creates notification using parameters from passed message (eg. from content script)
+	 */
+	
 	var createNotification = function(request, sender) {
 		var id = "notify_" + sender.tab.id;
 		
@@ -360,6 +401,10 @@ var background = (() => {
 			
 		});
 	};
+	
+	/**
+	 *  Allows us to create, update and clear a progress notification (eg. for image uploads)
+	 */
 	
 	var progressNotification = () => {
 		
@@ -401,7 +446,12 @@ var background = (() => {
 	};
 	
 })();
-	
+
+/**
+ *  Load default config to check for new keys
+ *  and pass it to the init() method
+ */
+
 background.getDefaultConfig((config) => {
 	background.init(config);
 });
