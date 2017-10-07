@@ -78,19 +78,15 @@ var background = (() => {
 	var checkVersion = function() {
 		var app = chrome.app.getDetails();
 		// notify user if chromeLL has been updated
-		if (localStorage['TZH-Version'] != app.version 
-				&& localStorage['TZH-Version'] != undefined 
+		if (localStorage['TZH-Version'] != app.version && localStorage['TZH-Version'] != undefined 
 				&& config.systemNotifications) {
 					
 			chrome.notifications.create('popup', {
 				
 					type: "basic",
 					title: "TZH has been updated",
-					message: "Old v: " + localStorage['TZH-Version'] 
-							+ ", New v: " + app.version,
-					buttons: [{
-						title: "Click for more info",
-					}],
+					message: "Old v: " + localStorage['TZH-Version'] + ", New v: " + app.version,
+					buttons: [{title: "Click for more info"}],
 					iconUrl: "src/images/tiko_bird.png"
 					
 				}, (id) => {
@@ -98,9 +94,8 @@ var background = (() => {
 					chrome.notifications.onButtonClicked.addListener((notifId, btnIdx) => {
 						
 						if (notifId === id && btnIdx === 0) {
-							// link user to topic containing changelog and other info
-							window.open("http://boards.endoftheinter.net/showmessages.php?topic=9458231");
 							chrome.notifications.clear(id, null);
+							showChangelog();
 						}
 						
 					});
@@ -108,8 +103,7 @@ var background = (() => {
 					setTimeout(function() {
 						chrome.notifications.clear(id, null);
 					}, 5000);
-				}
-			);
+			});
 			
 			localStorage['TZH-Version'] = app.version;
 		}
@@ -117,6 +111,11 @@ var background = (() => {
 		if (localStorage['TZH-Version'] == undefined) {
 			localStorage['TZH-Version'] = app.version;
 		}
+	};
+	
+	
+	var showChangelog = function() {
+		window.open("changelog.html", "extension_popup", "status=no,scrollbars=yes,resizable=no");
 	};
 	
 	/**

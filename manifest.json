@@ -16,7 +16,7 @@
 	
   "minimum_chrome_version": "40.0.0.0",
 	
-  "web_accessible_resources": ["src/images/tiko_bird.png", "src/images/tiko_bird_error.png", "options.html", "src/json/defaultconfig.json"],
+  "web_accessible_resources": ["src/images/tiko_bird.png", "src/images/tiko_bird_error.png", "options.html", "changelog.html", "src/json/defaultconfig.json"],
 	
   "icons": {
  	"16": "src/images/tiko_bird.png",
