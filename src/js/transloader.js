@@ -3,6 +3,7 @@
 function Transloader() {
 	const UPLOAD_SIZE_LIMIT = 10000000; // 10MB
 
+	var threadZone = '';
 	var needsRename = false;
 	var imageSrcUrl = '';
 	var imgurNotificationId;
@@ -10,7 +11,7 @@ function Transloader() {
 	/** 'PUBLIC' METHODS **/
 	
 	/**
-	 *  Pass srcUrl property from context menu event to this method before calling start()
+	 *  Set source URL using srcUrl property from context menu event
 	 */
 	 
 	var setImage = function(srcUrl) {
@@ -28,14 +29,19 @@ function Transloader() {
 	};
 	
 	/**
+	 *  Set destination for upload.
+	 */
+
+	var setThreadZone = function(zone) {
+		threadZone = zone;
+	};
+	
+	/**
 	 *  Main logic for transloader
 	 */
 	 
 	var start = function() {
-		if (!imageSrcUrl || imageSrcUrl === '') {
-			throw new Error('Couldn\'t find source URL');
-		}
-		
+		if (hasCorrectParams()) {	
 		var filename = getFilename(imageSrcUrl);
 		
 		if (needsRename) {
@@ -62,6 +68,22 @@ function Transloader() {
 	};
 	
 	/** 'PRIVATE' METHODS **/
+	
+	/**
+	 *  Make sure that params were set correctly
+	 */	
+	
+	var hasCorrectParams = function() {
+		if (!imageSrcUrl || imageSrcUrl === '') {
+			throw new Error('Couldn\'t find source URL');
+		}
+		
+		else if (!threadZone || threadZone === '') {
+			throw new Error('Couldn\'t find destination zone');
+		}
+
+		return true;
+	};
 	
 	/**
 	 *  Scrapes filename from URL and handles some weird edge cases
@@ -150,7 +172,7 @@ function Transloader() {
 		}
 		
 		else {
-			// If originalExtension is undefined, we let ETI handle the file extension.
+			// If originalExtension is undefined, we let Thread Zone handle the file extension.
 			if (originalExtension) {
 				return newFilename + originalExtension;
 			}
@@ -191,11 +213,11 @@ function Transloader() {
 	};
 
 	/**
-	 *  Uploads image to bad.thread.zone
+	 *  Uploads image to the Thread Zone
 	 */
 	
 	var uploadToThreadZone = function(blob, filename) {
-		const THREAD_ZONE_ENDPOINT = 'https://bad.thread.zone/upload/image';
+		var endpoint = 'https://' + threadZone + '.thread.zone/upload/image';
 		// Construct FormData object containing image blob
 		var formData = new FormData();
 		formData.append('image', blob, filename);
@@ -348,6 +370,7 @@ function Transloader() {
 	return {
 		'setImage': setImage,
 		'setParams': setParams,
+		'setThreadZone': setThreadZone,
 		'start': start		
 	};
 	

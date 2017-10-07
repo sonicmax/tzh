@@ -235,6 +235,7 @@ var background = (() => {
 		var transloader = new Transloader();
 		transloader.setImage(info.srcUrl);
 		transloader.setParams(shouldRename);
+		transloader.setThreadZone(config.zones[0]);
 		transloader.start();
 	};
 	
