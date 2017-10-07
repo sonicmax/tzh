@@ -266,7 +266,7 @@ var background = (() => {
 			// Update badge with ignorator info for active tab
 			chrome.tabs.onActivated.addListener(messagePassing.updateActiveTab);
 			
-			// Delete references to tab after navigating away from ETI
+			// Delete references to tab after navigating away from Thread Zone
 			chrome.tabs.onUpdated.addListener(messagePassing.checkNavigationDest);		
 			
 			// Delete references to tab after closing
