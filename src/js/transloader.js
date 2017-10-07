@@ -31,14 +31,6 @@ function Transloader() {
 	};
 	
 	/**
-	 *  Set destination for upload.
-	 */
-
-	var setThreadZone = function(zone) {
-		threadZone = zone;
-	};
-	
-	/**
 	 *  Main logic for transloader
 	 */
 	 
@@ -220,14 +212,15 @@ function Transloader() {
 	 */
 	
 	var uploadToThreadZone = function(blob, filename) {
-		var endpoint = 'https://' + threadZone + '.thread.zone/upload/image';
+		const ENDPOINT = 'https://thread.zone/api/upload';
+		
 		// Construct FormData object containing image blob
 		var formData = new FormData();
 		formData.append('image', blob, filename);
 
 		// Construct XHR and add event handlers/etc
 		var xhr = new XMLHttpRequest();
-		xhr.open('POST', endpoint, true);
+		xhr.open('POST', ENDPOINT, true);
 		
 		// After XHR completes, call onUploadSuccess with response and filename.
 		// Throw error if status code indicates that an error occured
@@ -250,8 +243,6 @@ function Transloader() {
 				
 				if (evt.lengthComputable) {
 					var percentage = Math.round((evt.loaded / evt.total) * 100);
-					
-					console.log(percentage);
 					
 					if (percentage === 100) {
 						update.type = 'basic';
@@ -429,7 +420,6 @@ function Transloader() {
 	return {
 		'setImage': setImage,
 		'setParams': setParams,
-		'setThreadZone': setThreadZone,
 		'start': start		
 	};
 	
