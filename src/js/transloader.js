@@ -6,8 +6,7 @@ function Transloader() {
 	var needsRename = false;
 	var imageSrcUrl = '';
 	
-	var imgurNotificationId;
-	var threadZoneNotificationId;
+	var notificationId;
 	
 	/** 'PUBLIC' METHODS **/
 	
@@ -223,7 +222,7 @@ function Transloader() {
 		xhr.onload = () => {
 			
 			if (xhr.status === 200) {
-				chrome.notifications.clear(threadZoneNotificationId, null);
+				chrome.notifications.clear(notificationId, null);
 				onUploadSuccess(xhr.responseText, filename);
 				
 			} else {
@@ -231,8 +230,15 @@ function Transloader() {
 			}
 		}	
 
-		xhr.upload.addEventListener('progress', (evt) => {
-			if (threadZoneNotificationId) {
+		xhr.upload.addEventListener('progress', handleProgressUpdate);
+
+		// Send FormData object to Thread Zone and create progress notification
+		xhr.send(formData);
+		showProgressNotification(xhr);
+	};
+	
+	var handleProgressUpdate = function(evt) {
+		if (notificationId) {
 				
 				var update = {};
 				
@@ -247,14 +253,9 @@ function Transloader() {
 						update.progress = percentage;
 					}
 					
-					chrome.notifications.update(threadZoneNotificationId, update);
+				chrome.notifications.update(notificationId, update);
 				}
 			}	
-		});				
-
-		// Send FormData object to Thread Zone and create progress notification
-		xhr.send(formData);
-		showProgressNotification(xhr);
 	};
 	
 	var showProgressNotification = function(xhr) {
@@ -272,7 +273,7 @@ function Transloader() {
 			
 		}, (id) => {
 			
-			threadZoneNotificationId = id;
+			notificationId = id;
 			
 			chrome.notifications.onButtonClicked.addListener((notifId, btnIdx) => {
 				
@@ -312,25 +313,7 @@ function Transloader() {
 			}
 		};
 		
-		xhr.upload.addEventListener('progress', (evt) => {
-			if (imgurNotificationId) {				
-				var update = {};
-				
-				if (evt.lengthComputable) {
-					var percentage = Math.round((evt.loaded / evt.total) * 100);
-					
-					if (percentage === '100%') {
-						update.type = 'basic';
-						update.contextMessage = 'Waiting for response...';
-					}
-					else {
-						update.progress = percentage;
-					}
-					
-					chrome.notifications.update(threadZoneNotificationId, update);
-				}
-			}	
-		});
+		xhr.upload.addEventListener('progress', handleProgressUpdate);
 		
 		showImgurNotification(xhr);
 		
@@ -352,7 +335,7 @@ function Transloader() {
 			
 		}, (id) => {
 			
-			imgurNotificationId = id;
+			notificationId = id;
 			
 			chrome.notifications.onButtonClicked.addListener((notifId, btnIdx) => {
 				
@@ -389,9 +372,9 @@ function Transloader() {
 		clipboard.select();
 		document.execCommand('copy');
 
-		if (imgurNotificationId) {
-			chrome.notifications.clear(imgurNotificationId, null);
-			imgurNotificationId = null;
+		if (notificationId) {
+			chrome.notifications.clear(notificationId, null);
+			notificationId = null;
 		}	
 	};
 	
