@@ -1,12 +1,24 @@
-// Original code by Milan
+"use strict";
+
+// Original code by Milan, updated by sonicmax
+
+/**  
+ *  Fake class thing to handle image transloading.
+ *  Usage: instantiate new Transloader, set image source URL with setImage(), then call start() to initiate transload
+ */
 
 function Transloader() {
 	const UPLOAD_SIZE_LIMIT = 10000000; // 10MB
+	const THREAD_ZONE_UPLOAD_MESSAGE = 'Uploading image to the Thread Zone...';
+	const IMGUR_UPLOAD_MESSAGE = 'This image is too big (>10MB) - uploading to Imgur...';
 
 	var needsRename = false;
 	var imageSrcUrl = '';
+	var notifier;
 	
-	var notificationId;
+	var init = function() {
+		notifier = new Notifier();
+	}();
 	
 	/** 'PUBLIC' METHODS **/
 	
@@ -70,7 +82,7 @@ function Transloader() {
 		if (!imageSrcUrl || imageSrcUrl === '') {
 			throw new Error('Couldn\'t find source URL');
 		}
-		
+
 		return true;
 	};
 	
@@ -222,7 +234,7 @@ function Transloader() {
 		xhr.onload = () => {
 			
 			if (xhr.status === 200) {
-				chrome.notifications.clear(notificationId, null);
+				notifier.clear();			
 				onUploadSuccess(xhr.responseText, filename);
 				
 			} else {
@@ -230,71 +242,19 @@ function Transloader() {
 			}
 		}	
 
-		xhr.upload.addEventListener('progress', handleProgressUpdate);
-
-		// Send FormData object to Thread Zone and create progress notification
-		xhr.send(formData);
-		showProgressNotification(xhr);
+		notifier.showProgress(THREAD_ZONE_UPLOAD_MESSAGE, xhr);
+		xhr.upload.addEventListener('progress', notifier.updateProgress);
+		xhr.send(formData);		
 	};
 	
-	var handleProgressUpdate = function(evt) {
-		if (notificationId) {
-				
-				var update = {};
-				
-				if (evt.lengthComputable) {
-					var percentage = Math.round((evt.loaded / evt.total) * 100);
-					
-					if (percentage === 100) {
-						update.type = 'basic';
-						update.contextMessage = 'Waiting for response...';
-					}
-					else {
-						update.progress = percentage;
-					}
-					
-				chrome.notifications.update(notificationId, update);
-				}
-			}	
-	};
+	/**
+	 *  Uploads image to Imgur
+	 */
 	
-	var showProgressNotification = function(xhr) {
-		chrome.notifications.create('upload', {
-			
-			type: 'progress',
-			title: 'Thread Zone Helper',
-			message: 'Uploading image to the Thread Zone...',
-			progress: 0,
-			buttons: [{
-				title: 'Cancel'
-			}],
-			requireInteraction: true,
-			iconUrl: 'src/images/tiko_bird.png'
-			
-		}, (id) => {
-			
-			notificationId = id;
-			
-			chrome.notifications.onButtonClicked.addListener((notifId, btnIdx) => {
-				
-				if (notifId === id && btnIdx === 0) {
-					xhr.abort();
-					chrome.notifications.clear(id, null);
-				}
-				
-			});
-			
-		});
-	};	
-	
-	var onUploadSuccess = function(responseText, filename) {
-		copyToClipboard(responseText);		
-		showSuccessNotification(filename);
-	};
-
 	var uploadToImgur = function(blob, filename) {
 		const IMGUR_UPLOAD_ENDPOINT = 'https://api.imgur.com/3/image';
 		const API_KEY = 'Client-ID 6356976da2dad83';
+			
 		var formData = new FormData();
 		formData.append('image', blob);
 		
@@ -313,85 +273,39 @@ function Transloader() {
 			}
 		};
 		
-		xhr.upload.addEventListener('progress', handleProgressUpdate);
-		
-		showImgurNotification(xhr);
-		
+		notifier.showProgress(IMGUR_UPLOAD_MESSAGE, xhr);
+		xhr.upload.addEventListener('progress', notifier.updateProgress);						
 		xhr.send(formData);
+	};		
+	
+	var onUploadSuccess = function(responseText, filename) {
+		copyToClipboard(responseText);		
+		showSuccessNotification(filename);
 	};
-
-	var showImgurNotification = function(xhr) {
-		chrome.notifications.create('fail', {
-			
-			type: 'progress',
-			title: 'Too big to fail',
-			message: 'This image is too big (>2MB) - uploading to Imgur...',
-			progress: 0,
-			buttons: [{
-				title: 'Cancel'
-			}],
-			requireInteraction: true,
-			iconUrl: 'src/images/tiko_bird_error.png'
-			
-		}, (id) => {
-			
-			notificationId = id;
-			
-			chrome.notifications.onButtonClicked.addListener((notifId, btnIdx) => {
-				
-				if (notifId === id && btnIdx === 0) {
-					xhr.abort();
-					chrome.notifications.clear(id, null);
-				}
-				
-			});
-			
-		});
-	};
-
-	var showErrorNotification = function(statusCode) {
-		chrome.notifications.create('fail', {
-			
-			type: 'basic',
-			title: 'Image transloading failed',
-			message: 'Error while uploading to Imgur. Status code: ' + statusCode,	
-			iconUrl: 'src/images/tiko_bird_error.png'
-			
-		}, (id) => {
-			
-			setTimeout(() => {
-				chrome.notifications.clear(id, null);	
-			}, 3000);
-			
-		});
-	};
-
+	
 	var copyToClipboard = function(text) {
+		// Clipboard element is created by background.js
 		var clipboard = document.getElementById('clipboard');
 		clipboard.value = text;
 		clipboard.select();
 		document.execCommand('copy');
-
-		if (notificationId) {
-			chrome.notifications.clear(notificationId, null);
-			notificationId = null;
-		}	
-	};
+	};	
 	
-	var showSuccessNotification = function(filename) {
-		chrome.notifications.create('succeed', {
-			
+	var showSuccessNotification = function(filename) {		
+		notifier.create('success', {	
 			type: 'basic',
 			title: window.decodeURI(filename) + ' transloaded',
 			message: 'The Markdown is now in your clipboard',
-			iconUrl: 'src/images/tiko_bird.png'
-			
-		}, (id) => {
-			
-			setTimeout(() => {
-				chrome.notifications.clear(id, null);	
-			}, 5000);
-			
+			iconUrl: 'src/images/tiko_bird.png'			
+		});
+	};	
+
+	var showErrorNotification = function(statusCode) {
+		notifier.create('error', {
+			type: 'basic',
+			title: 'Image transloading failed',
+			message: 'Error while uploading to Imgur. Status code: ' + statusCode,	
+			iconUrl: 'src/images/tiko_bird_error.png'			
 		});
 	};
 	

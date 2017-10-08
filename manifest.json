@@ -31,7 +31,7 @@
   },
 	
   "background": {
-    "scripts": ["background.js", "src/js/transloader.js"]
+    "scripts": ["src/js/transloader.js", "src/js/notifier.js", "background.js"]
   },
 	
   "permissions": [ "tabs", "clipboardWrite", "notifications", "http://*/*", "https://*/*", "contextMenus", "webRequest", "webRequestBlocking", "storage", "unlimitedStorage"]

@@ -5,7 +5,7 @@ BUILD_SRC=$(BUILD_DIR)/src
 BUILD_JS=$(BUILD_SRC)/js
 SRC_JS=src/js
 
-all: copy_files background options.js transloader.js
+all: copy_files background options.js transloader.js notifier.js
 	
 copy_files:
 	-mkdir build
@@ -14,8 +14,7 @@ copy_files:
 	cp -r lib/ $(BUILD_DIR) 
 	-mkdir $(BUILD_SRC) 
 	cp -r src/css src/images src/json $(BUILD_SRC) 
-	-mkdir $(BUILD_JS) 
-
+	-mkdir $(BUILD_JS)
 	
 background:
 	$(CC) $(CFLAGS) $(BUILD_DIR)/background.js background.js
@@ -25,6 +24,9 @@ options.js:
 
 transloader.js:
 	$(CC) $(CFLAGS) $(BUILD_JS)/transloader.js $(SRC_JS)/transloader.js
+	
+notifier.js:
+	$(CC) $(CFLAGS) $(BUILD_JS)/notifier.js $(SRC_JS)/notifier.js	
 	
 clean:
 	rm -rf build/*

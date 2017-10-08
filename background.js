@@ -1,3 +1,5 @@
+"use strict";
+
 var background = (() => {
 	const DEFAULT_CONFIG_LOCATION = '/src/json/defaultconfig.json';
 	const CONFIG_KEY = 'TZH-Config';
@@ -6,20 +8,27 @@ var background = (() => {
 	var tabPorts = {};
 	var notificationData = {};
 	
+	var notifier;
+	var notificationDuration;
+	var transloader;
+	
 	/**
 	 *  Called whenever extension is started (on opening Chrome, after installation/update, etc)
 	 */
 	
-	var init = function(defaultConfig) {
-		updateConfig(defaultConfig);
-		buildContextMenu();	
+	var init = function() {
+		updateConfig();
+		
+		notifier = new Notifier();
+		transloader = new Transloader();				
 		
 		// Note: not needed yet
 		// messagePassing.addListeners(); 		
 		// chrome.notifications.onClicked.addListener(makeNotificationOriginActive);
 		
-		checkVersion();
-		createClipboardElement();	
+		checkVersion();		
+		createClipboardElement();
+		buildContextMenu();
 		getSubbedZones();
 	};
 	
@@ -44,22 +53,25 @@ var background = (() => {
 	 *  (eg. after extension update with new options)
 	 */
 	
-	var updateConfig = function(defaultConfig) {
-		if (localStorage[CONFIG_KEY] === undefined) {
-			localStorage[CONFIG_KEY] = JSON.stringify(defaultConfig);
-			config = defaultConfig;
-		}
-		
-		else {
-			config = JSON.parse(localStorage[CONFIG_KEY]);
+	var updateConfig = function() {
+		background.getDefaultConfig((defaultConfig) => {		
+			if (localStorage[CONFIG_KEY] === undefined) {
+				localStorage[CONFIG_KEY] = JSON.stringify(defaultConfig);
+				config = defaultConfig;
+			}
 			
-			for (var i in defaultConfig) {
-				// if this variable does not exist, set it to the default
-				if (config[i] === undefined) {
-					config[i] = defaultConfig[i];
-				}
-			}		
-		}
+			else {
+				config = JSON.parse(localStorage[CONFIG_KEY]);
+				
+				for (var i in defaultConfig) {
+					// if this variable does not exist, set it to the default
+					if (config[i] === undefined) {
+						config[i] = defaultConfig[i];
+					}
+				}		
+			}
+			
+		});
 	};
 	
 	/**
@@ -75,34 +87,31 @@ var background = (() => {
 	 *  if extension has been updated.
 	 */
 	
-	var checkVersion = function() {
+	var checkVersion = function() {		
 		var app = chrome.app.getDetails();
 		// notify user if chromeLL has been updated
-		if (localStorage['TZH-Version'] != app.version && localStorage['TZH-Version'] != undefined 
-				&& config.systemNotifications) {
+		if (config.systemNotifications && localStorage['TZH-Version'] != app.version 
+				&& localStorage['TZH-Version'] != undefined) {
 					
-			chrome.notifications.create('popup', {
-				
+			var options = {				
 					type: "basic",
 					title: "TZH has been updated",
 					message: "Old v: " + localStorage['TZH-Version'] + ", New v: " + app.version,
 					buttons: [{title: "Click for more info"}],
-					iconUrl: "src/images/tiko_bird.png"
-					
-				}, (id) => {
-					
-					chrome.notifications.onButtonClicked.addListener((notifId, btnIdx) => {
-						
+					iconUrl: "src/images/tiko_bird.png"				
+			};
+			
+			notifier.create('update', options, (id) => {				
+					chrome.notifications.onButtonClicked.addListener((notifId, btnIdx) => {				
 						if (notifId === id && btnIdx === 0) {
-							chrome.notifications.clear(id, null);
+							notifier.clear();
 							showChangelog();
-						}
-						
+						}					
 					});
 					
-					setTimeout(function() {
-						chrome.notifications.clear(id, null);
-					}, 5000);
+					setTimeout(() => {
+							notifier.clear();
+					}, notificationDuration);
 			});
 			
 			localStorage['TZH-Version'] = app.version;
@@ -113,6 +122,9 @@ var background = (() => {
 		}
 	};
 	
+	var debug = function() {
+		showChangelog(JSON.parse(response).changelog);	
+	};
 	
 	var showChangelog = function() {
 		window.open("changelog.html", "extension_popup", "status=no,scrollbars=yes,resizable=no");
@@ -231,9 +243,8 @@ var background = (() => {
 	 */
 	
 	var transloadImage = function(info, shouldRename) {
-		var transloader = new Transloader();
 		transloader.setImage(info.srcUrl);
-		transloader.setParams(shouldRename);
+		transloader.setParams(shouldRename);		
 		transloader.start();
 	};
 	
@@ -331,23 +342,6 @@ var background = (() => {
 					// Return true so that we can use sendResponse asynchronously 
 					// (See: https://developer.chrome.com/extensions/runtime#event-onMessage)
 					return true;
-					
-				case "notify":
-					// Generate unique ID for each tab so we can perform tab-specific actions later
-					createNotification(request, sender);					
-					break;				
-					
-				case "progress_notify":
-					progressNotification.create(request.data);
-					break;
-					
-				case "update_progress_notify":
-					progressNotification.update(request.update);
-					break;
-					
-				case "clear_progress_notify":
-					progressNotification.clear(request.title);
-					break;
 
 				case "copy":
 					var clipboard = document.getElementById('clipboard');
@@ -379,76 +373,6 @@ var background = (() => {
 					break;
 			}
 		}
-	};
-	
-	/**
-	 *  Creates notification using parameters from passed message (eg. from content script)
-	 */
-	
-	var createNotification = function(request, sender) {
-		var id = "notify_" + sender.tab.id;
-		
-		notificationData[id] = {
-			tab: sender.tab
-		};
-		
-		chrome.notifications.create(id, {
-			type: "basic",
-			title: request.title,
-			message: request.message,
-			iconUrl: "src/images/tiko_bird.png"
-		},
-		
-		(id) => {
-			
-			if (config.notificationDuration === "0") {
-				return;
-			}
-			
-			setTimeout(() => {
-				chrome.notifications.clear(id, null);
-				delete notificationData[id];
-			}, parseInt(config.notificationDuration, 10) * 1000);
-			
-		});
-	};
-	
-	/**
-	 *  Allows us to create, update and clear a progress notification (eg. for image uploads)
-	 */
-	
-	var progressNotification = () => {
-		
-		var create = function(data) {
-			chrome.notifications.create('progress', {
-				
-				type: 'progress',
-				title: data.title,
-				message: '',
-				progress: data.progress,						
-				requireInteraction: true,
-				iconUrl: 'src/images/tiko_bird.png'
-				
-			});
-		};
-		
-		var update = function(update) {
-			chrome.notifications.update('progress', update);
-		};
-		
-		var clear = function(title) {
-			chrome.notifications.update('progress', { type: 'basic', title: title, contextMessage: '' });
-			
-			setTimeout(() => {
-				chrome.notifications.clear('progress', null);
-			}, 3000);		
-		};
-		
-		return {
-			'create': create,
-			'update': update,
-			'clear': clear			
-		};		
 	};
 	
 	var getSubbedZones = function() {
@@ -511,17 +435,12 @@ var background = (() => {
 	};	
 	
 	return {
-		'init': init,
-		'getDefaultConfig': getDefaultConfig
+		init: init,
+		debug: debug,
+		getDefaultConfig: getDefaultConfig, 
+		config: config
 	};
 	
 })();
 
-/**
- *  Load default config to check for new keys
- *  and pass it to the init() method
- */
-
-background.getDefaultConfig((config) => {
-	background.init(config);
-});
+background.init();
